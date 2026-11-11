@@ -58,3 +58,5 @@ npm run test:extension
 本地验收后，登录 Cloudflare，确认 Wrangler 使用正确的账户，并在 `develop` 上运行 `npm run deploy:preview`，获得 `workers.dev` 试用链接。Wrangler 配置未声明任何自定义域名。试用验收后，再核对 Namecheap 注册域名实际使用的 DNS 服务和 Cloudflare zone 状态，确认子域名无冲突后为 `download.tutudev.com` 配置 Worker Custom Domain。注册商和 DNS 托管商可以不同。
 
 需求和限制见[设计稿](docs/superpowers/specs/2026-11-11-downloadany-web-design.md)。
+
+Edge Add-ons 和 Chrome Web Store 共用同一个提交包。运行 `npm run package:stores` 构建 ZIP；商店包省略本机开发地址，侧载测试包保持原样。商店字段、权限用途和自有媒体审核样例见[提交材料](docs/releases/extension-stores-0.3.2.md)。

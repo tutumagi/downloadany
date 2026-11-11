@@ -15,6 +15,7 @@
     "deploy:check": "npm run build && wrangler deploy --dry-run",
     "deploy:preview": "npm run build && wrangler deploy",
     "build:extension": "vite build --config extension/vite.config.ts",
+    "package:stores": "npm run build:extension && python3 scripts/package-store.py",
     "test:hls-media": "node tests/hls-media.mjs",
     "test:extension": "node tests/extension-browser.mjs"
   },
