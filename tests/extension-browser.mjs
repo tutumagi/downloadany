@@ -22,9 +22,20 @@ try {
   await writeFile(join(extension, 'harness.html'), '<!doctype html><title>Extension test</title>');
 
   const credentials = [];
+  const progressiveFile = await readFile(resolve('public/demo/orbit.mp4'));
   server = createServer(async (request, response) => {
     try {
       const path = new URL(request.url, 'http://127.0.0.1').pathname;
+      if (path === '/runtime-mp4') {
+        response.writeHead(200, { 'content-type': 'text/html' });
+        response.end('<video preload="metadata"></video><script>setTimeout(() => document.querySelector("video").src="/runtime.mp4", 250)</script>');
+        return;
+      }
+      if (path === '/runtime.mp4') {
+        response.writeHead(200, { 'content-type': 'video/mp4', 'content-length': progressiveFile.length, 'access-control-allow-origin': '*' });
+        response.end(progressiveFile);
+        return;
+      }
       if (path === '/' || path === '/hls-page' || path === '/dash-then-hls') {
         response.writeHead(200, { 'content-type': 'text/html', 'set-cookie': ['demo', '1'].join('=') + '; Path=/; SameSite=Lax' });
         if (path === '/dash-then-hls') {
@@ -60,8 +71,7 @@ try {
   await new Promise((resolve, reject) => server.listen(0, '127.0.0.1', resolve).once('error', reject));
   const fixture = 'http://127.0.0.1:' + server.address().port + '/';
   context = await chromium.launchPersistentContext(profile, {
-    channel: 'chromium', headless: true, acceptDownloads: true,
-    executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
+    channel: 'msedge', headless: true, acceptDownloads: true,
     args: ['--disable-extensions-except=' + extension, '--load-extension=' + extension],
   });
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker', { timeout: 12000 });
@@ -115,7 +125,7 @@ try {
   assert.ok(Number(output.format.duration) > 4.9);
   assert.ok(credentials.length > scanStart);
   assert.ok(credentials.slice(scanStart).every((value) => !value), 'extension fetches do not replay credentials');
-  console.log('Chromium extension: active page detection, DASH fallback, HLS MP4 save and playable audio/video verified.');
+  console.log('Edge extension: active page detection, DASH fallback, HLS MP4 save and playable audio/video verified.');
 
   // Serve the actual web build at its approved local origin without touching the user's running dev server.
   const webOrigin = 'http://127.0.0.1:8787';
@@ -140,7 +150,11 @@ try {
   const launch = web.getByRole('button', { name: '在播放页识别', exact: false });
   await launch.waitFor();
   const nextManager = () => context.waitForEvent('page', {
-    predicate: (page) => page.url().startsWith('chrome-extension://' + extensionId + '/manager.html'), timeout: 12000,
+    // Edge can emit the page event before the extension page commits its navigation.
+    predicate: (page) => page.waitForURL((url) => url.protocol === 'chrome-extension:'
+      && url.hostname === extensionId && url.pathname === '/manager.html', { timeout: 4000 })
+      .then(() => true, () => false),
+    timeout: 12000,
   });
   const next = nextManager();
   const linkedDownload = next.then((page) => page.waitForEvent('download', { timeout: 25000 }));
@@ -178,6 +192,16 @@ try {
   await delayedManager.getByRole('status').filter({ hasText: '找到 2 个分片来源' }).waitFor();
   await delayedManager.getByRole('button', { name: '生成 MP4' }).waitFor();
   assert.equal(await delayedManager.getByRole('link', { name: '保存 MP4' }).count(), 0);
+
+  await web.getByRole('textbox', { name: '视频网址' }).fill(fixture + 'runtime-mp4');
+  await web.getByRole('button', { name: '解析视频' }).click();
+  await launch.waitFor();
+  const progressiveManager = nextManager();
+  const savedProgressive = progressiveManager.then((page) => page.waitForEvent('download', { timeout: 25000 }));
+  await launch.click();
+  await (await progressiveManager).getByRole('status').filter({ hasText: '找到 1 个视频来源' }).waitFor();
+  assert.deepEqual(await readFile(await (await savedProgressive).path()), progressiveFile);
+  console.log('Edge website bridge: a playback-only native MP4 was identified and saved byte-for-byte.');
 } finally {
   await context?.close();
   if (server?.listening) await new Promise((resolve) => server.close(resolve));
