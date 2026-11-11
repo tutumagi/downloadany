@@ -17,11 +17,14 @@ npm run dev
 
 ## 本地浏览器扩展：HLS 回放
 
-需要 Chrome 或 Edge 121 及以上。扩展独立于网页和 Cloudflare。
+需要 Chrome 或 Edge 121 及以上。DownloadAny 网页发起任务，扩展在本机处理流媒体。
 
 1. 运行 `npm ci` 和 `npm run build:extension`。
 2. 在 Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`），开启「开发者模式」，选择「加载已解压的扩展程序」，选择仓库里的 `dist-extension`。
-3. 在原网页开始播放，等画面出来后点击 DownloadAny 扩展图标。看到 HLS 来源后，点「生成 MP4」再点「保存 MP4」。如果浏览器拦截了跨域读取，可选择只授予当前媒体域名的读取权限。
+3. 打开 [DownloadAny 本地网页](http://127.0.0.1:8787)，粘贴链接并点「解析视频」。已知高途回放和 HLS/DASH 清单会直接打开下载面板；其他网页若无法静态解析，可以点「在播放页识别」。
+4. 下载面板必要时会请你授予播放站点权限，再打开原播放页。若没有自动播放，请点播放。检测到单一可用的 HLS 来源时会自动生成并尝试下载 MP4；浏览器拦截时仍可点「保存 MP4」。多个来源由你选择。
+
+也可以直接在原播放网页点击扩展图标。已有 0.2 扩展的用户需要先重新加载扩展并刷新 DownloadAny 网页。当前网页桥仅启用于本地 8787 和 `download.tutudev.com`；部署 `workers.dev` 预览前需要加入该项目的确切预览域名。
 
 本版支持未加密、同源分片、音视频在同一流中的 HLS 回放，输出最多 2 GiB。扩展不会把媒体地址或登录信息传给 DownloadAny 服务。需要登录权限、加密、跨域分片、分离音轨或 DASH 的内容暂不能导出。识别依据是当前播放页和同源内嵌页的媒体信息及近期请求；有些播放器不会暴露足够信息。关闭浏览器或标签页前请等待保存完成。扩展会定期清理浏览器里用于生成文件的临时副本。
 
@@ -40,6 +43,7 @@ npm run test:browser
 扩展测试另需 FFmpeg/FFprobe 和 Playwright Chromium（`npx playwright install chromium`）：
 
 ```sh
+npm run build
 npm run build:extension
 npm run test:hls-media
 npm run test:extension

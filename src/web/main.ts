@@ -1,4 +1,6 @@
 import './style.css';
+import { extractPlaybackUrl, playbackTarget, shouldRouteLocally } from '../stream-flow.ts';
+import { launchPlayback } from './playback.ts';
 import {
   DEMO_DIRECT, DEMO_PAGE, MAX_BROWSER_BYTES, PLATFORM_NAMES,
   type ErrorCode, type InspectFailure, type InspectResult, type Video,
@@ -16,6 +18,7 @@ const results = byId('results');
 const list = byId<HTMLUListElement>('video-list');
 const sourceLink = byId<HTMLAnchorElement>('source-link');
 const retry = byId<HTMLButtonElement>('retry');
+const playback = byId<HTMLButtonElement>('playback');
 let busy = false;
 
 const messages: Record<ErrorCode, string> = {
@@ -23,7 +26,7 @@ const messages: Record<ErrorCode, string> = {
   multiple_urls: '发现多个网址，请只保留一条再解析。',
   source_not_allowed: '这个来源暂未开放。你可以先试用下方的内置示例。',
   platform_disabled: '这个平台暂未开放。',
-  no_video: '没有在页面中找到可识别的 MP4。动态播放器和分片视频暂不支持。',
+  no_video: '没有在页面中找到可直下的 MP4。如果视频在播放后才加载，可以在播放页识别。',
   upstream_restricted: '源站要求登录、验证或限制了访问。请在原站查看。',
   expired: '这个链接已失效或已被删除。请重新获取链接。',
   upstream_error: '暂时无法访问源站，请稍后重新解析。',
@@ -172,6 +175,25 @@ function originalLink(text: string) {
   } catch { /* no link for malformed input */ }
 }
 
+async function openStream(url: string) {
+  playback.disabled = true;
+  playback.hidden = true;
+  setStatus('正在打开流媒体下载面板…', 'loading');
+  try {
+    const result = await launchPlayback(url);
+    if (result === 'opened') {
+      setStatus('已打开下载面板。需要时先授权播放站点，视频载入后会自动识别。', 'notice');
+    } else {
+      setStatus(result === 'missing'
+        ? '请在 Chrome 或 Edge 安装或重新加载 DownloadAny 扩展，刷新本页后重试。'
+        : '无法打开下载面板。请刷新本页，再点击「在播放页识别」。', 'error');
+      playback.hidden = false;
+    }
+  } finally {
+    playback.disabled = false;
+  }
+}
+
 async function submitInput() {
   if (busy) return;
   const value = input.value.trim();
@@ -187,9 +209,15 @@ async function submitInput() {
   results.hidden = true;
   list.replaceChildren();
   retry.hidden = true;
+  playback.hidden = true;
   sourceLink.hidden = true;
   sourceLink.removeAttribute('href');
   try {
+    const url = extractPlaybackUrl(value);
+    if (url && shouldRouteLocally(url)) {
+      await openStream(url);
+      return;
+    }
     const response = await fetch('/api/v1/inspect', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ url: value }), signal: AbortSignal.timeout(11000),
@@ -201,6 +229,9 @@ async function submitInput() {
         : (messages[failure.error] ?? messages.upstream_error), 'error');
       retry.hidden = !failure.retryable;
       if (failure.source || failure.error === 'upstream_restricted') originalLink(value);
+      if (url && playbackTarget(url) && (failure.error === 'source_not_allowed' || failure.error === 'no_video')) {
+        playback.hidden = false;
+      }
       return;
     }
     render(await response.json() as InspectResult);
@@ -217,6 +248,11 @@ async function submitInput() {
 
 form.addEventListener('submit', (event) => { event.preventDefault(); void submitInput(); });
 retry.addEventListener('click', () => void submitInput());
+playback.addEventListener('click', () => {
+  const url = extractPlaybackUrl(input.value);
+  if (url && playbackTarget(url)) void openStream(url);
+  else setStatus('请输入可打开的播放页网址。', 'error');
+});
 for (const [id, path] of [['example-direct', DEMO_DIRECT], ['example-page', DEMO_PAGE]]) {
   byId(id).addEventListener('click', () => {
     input.value = new URL(path, location.origin).href;
