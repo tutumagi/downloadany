@@ -3,7 +3,7 @@
 ## 商店字段
 
 - 名称：DownloadAny · 分片视频
-- 语言：简体中文
+- 默认语言：简体中文；提交包同时提供英文名称及简述。扩展操作界面目前为简体中文。
 - 建议分类：效率工具；若商店使用更具体的工具分类，选其对应项。
 - 网站：https://downloadany.tufei-fly.workers.dev/
 - 隐私政策：https://downloadany.tufei-fly.workers.dev/privacy.html
