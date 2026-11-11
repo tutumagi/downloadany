@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
 
 test('locally routes known replay links, without accepting lookalike hosts', async () => {
   const { playbackTarget, shouldRouteLocally } = await import('../src/stream-flow.ts');
@@ -31,4 +33,21 @@ test('a direct playlist keeps its URL and goes directly to the local manager', a
   const url = 'https://media.example/video.m3u8?example=1';
   assert.deepEqual(playbackTarget(url), { url, origin: 'https://media.example', direct: 'hls' });
   assert.equal(shouldRouteLocally(url), true);
+});
+
+test('the deployed preview is trusted at each bridge layer without opening other workers.dev origins', async () => {
+  const { trustedWebOrigin, WORKERS_PREVIEW_ORIGIN: preview } = await import('../src/stream-flow.ts');
+  const manifest = JSON.parse(await readFile(new URL('../extension/public/manifest.json', import.meta.url), 'utf8'));
+  const bridge = await readFile(new URL('../extension/public/web-bridge.js', import.meta.url), 'utf8');
+  const matches = manifest.content_scripts.find((script) => script.js.includes('web-bridge.js')).matches;
+  assert.deepEqual(matches.filter((entry) => entry.includes('workers.dev')), [preview + '/*']);
+  for (const [origin, trusted] of [[preview, true], ['https://other.tufei-fly.workers.dev', false],
+    [preview + '.example', false], [preview.replace('https:', 'http:'), false]]) {
+    let listening = false;
+    const window = { addEventListener(event) { listening ||= event === 'message'; } };
+    window.top = window;
+    runInNewContext(bridge, { window, location: { origin } });
+    assert.equal(listening, trusted, origin);
+    assert.equal(trustedWebOrigin(origin), trusted, origin);
+  }
 });
