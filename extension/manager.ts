@@ -1,9 +1,11 @@
 import './style.css';
 import type { Candidate } from './detect.ts';
-import type { Scan } from './background.ts';
+import type { PlaybackJob, Scan } from './background.ts';
+import { readCandidates } from './observe.ts';
 import { HlsError, prepareHls, type HlsCode } from './hls.ts';
 import { writeHlsMp4 } from './remux.ts';
 import { expireTemporaryFiles, LINK_TTL_MS, openTempDirectory } from './temp.ts';
+import { playbackTarget } from '../src/stream-flow.ts';
 
 const status = document.querySelector<HTMLElement>('#status')!;
 const list = document.querySelector<HTMLElement>('#sources')!;
@@ -32,7 +34,7 @@ function createButton(text: string) {
   return button;
 }
 
-function renderSource(candidate: Candidate, index: number) {
+function renderSource(candidate: Candidate, index: number, auto = false) {
   const item = document.createElement('li');
   const url = new URL(candidate.url);
   const heading = document.createElement('strong');
@@ -101,6 +103,10 @@ function renderSource(candidate: Candidate, index: number) {
       temp = undefined;
       prepare.hidden = true;
       note.textContent = 'MP4 已生成，点击保存。';
+      if (auto) {
+        save.click();
+        note.textContent = 'MP4 已生成并尝试下载。如下载记录中没有文件，请点击「保存 MP4」。';
+      }
       save.focus();
     } catch (error) {
       if (writer) await writer.abort().catch(() => {});
@@ -134,27 +140,131 @@ function renderSource(candidate: Candidate, index: number) {
       grant.disabled = false;
     }
   });
+  if (auto) queueMicrotask(() => { void run(true); });
   return item;
+}
+
+function showSources(candidates: Candidate[], auto: boolean) {
+  status.textContent = '找到 ' + candidates.length + ' 个分片来源。';
+  const singleHls = candidates.length === 1 && candidates[0].kind === 'hls';
+  list.replaceChildren(...candidates.map((candidate, index) =>
+    renderSource(candidate, index, auto && singleHls && candidate.kind === 'hls')));
+}
+
+async function openPlayback({ target }: PlaybackJob) {
+  if (target.direct) {
+    showSources([{ url: target.url, kind: target.direct }], true);
+    return;
+  }
+  const origin = new URL(target.origin);
+  const permission = { origins: [permissionFor(origin)] };
+  const manager = await chrome.tabs.getCurrent();
+  const controls = document.createElement('div');
+  controls.className = 'playback-controls';
+  const start = createButton('允许并打开播放页');
+  const stop = createButton('停止识别');
+  stop.hidden = true;
+  controls.append(start, stop);
+  status.after(controls);
+  let active = false;
+  let stopped = false;
+  stop.addEventListener('click', () => { stopped = true; });
+
+  async function watch() {
+    if (active) return;
+    active = true;
+    stopped = false;
+    start.hidden = true;
+    stop.hidden = false;
+    try {
+      const playback = await chrome.tabs.create({ url: target.url });
+      if (playback.id === undefined) throw new Error('missing tab');
+      const tabId = playback.id;
+      const deadline = Date.now() + 120000;
+      const found = new Map<string, Candidate>();
+      let changedAt = 0;
+      status.textContent = '已打开播放页，正在识别视频。若页面没有自动播放，请在新标签页点播放。';
+      while (!stopped && Date.now() < deadline) {
+        const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+        if (!tab) {
+          status.textContent = '播放页已关闭，识别已停止。';
+          return;
+        }
+        const candidates = await readCandidates(tabId, target.origin).catch(() => []);
+        if (stopped) break;
+        for (const candidate of candidates) {
+          if (found.size < 12 && !found.has(candidate.url) && playbackTarget(candidate.url)) {
+            found.set(candidate.url, candidate);
+            changedAt = Date.now();
+          }
+        }
+        const hasHls = [...found.values()].some((candidate) => candidate.kind === 'hls');
+        if (hasHls && Date.now() - changedAt >= 2500) {
+          controls.remove();
+          showSources([...found.values()], true);
+          if (manager?.id !== undefined && tab.active) {
+            await chrome.tabs.update(manager.id, { active: true }).catch(() => {});
+          }
+          return;
+        }
+        if (found.size && !hasHls) status.textContent = '已发现 DASH，正在继续检查是否还有 HLS 来源。';
+        await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      }
+      if (found.size) {
+        controls.remove();
+        showSources([...found.values()], false);
+        return;
+      }
+      status.textContent = stopped ? '已停止识别，播放页仍然打开。'
+        : '未识别到分片。请确认视频已播放；如果页面跳转到其他域名，可以在实际播放页点击扩展图标。';
+    } catch {
+      status.textContent = '无法打开播放页，请回到 DownloadAny 网页重试。';
+    } finally {
+      active = false;
+      stop.hidden = true;
+      start.hidden = false;
+      start.textContent = '重新打开播放页';
+    }
+  }
+
+  start.addEventListener('click', async () => {
+    start.disabled = true;
+    try {
+      if (await chrome.permissions.request(permission)) await watch();
+      else status.textContent = '没有获得读取权限，未打开播放页。';
+    } catch {
+      status.textContent = '浏览器未允许读取这个播放站点。';
+    } finally {
+      start.disabled = false;
+    }
+  });
+  if (await chrome.permissions.contains(permission)) {
+    status.textContent = '正在打开播放页…';
+    void watch();
+  } else {
+    status.textContent = '浏览器需要先允许读取 ' + origin.hostname + '，才能在播放时识别分片。';
+  }
 }
 
 async function init() {
   const key = location.hash.slice(1);
-  if (!/^scan:[\da-f-]{36}$/i.test(key)) {
+  if (!/^(?:scan|play):[\da-f-]{36}$/i.test(key)) {
     status.textContent = '请在播放页点击 DownloadAny 扩展图标。';
     return;
   }
-  const { [key]: scan } = await chrome.storage.session.get(key) as Record<string, Scan | undefined>;
+  const { [key]: session } = await chrome.storage.session.get(key) as Record<string, Scan | PlaybackJob | undefined>;
   await chrome.storage.session.remove(key);
   history.replaceState(null, '', location.pathname);
-  if (!scan || Date.now() - scan.at > scanAge) {
+  if (!session || Date.now() - session.at > scanAge) {
     status.textContent = '识别结果已失效，请回到播放页重新点击扩展图标。';
-  } else if (scan.inaccessible) {
+  } else if ('target' in session) {
+    await openPlayback(session);
+  } else if (session.inaccessible) {
     status.textContent = '无法读取这个标签页。请在正常的网页播放页点击扩展图标。';
-  } else if (!scan.candidates.length) {
+  } else if (!session.candidates.length) {
     status.textContent = '没有找到 HLS 或 DASH。请回到原标签页开始播放，等视频载入后再点击扩展图标。';
   } else {
-    status.textContent = '找到 ' + scan.candidates.length + ' 个分片来源。';
-    list.replaceChildren(...scan.candidates.map(renderSource));
+    showSources(session.candidates, false);
   }
 }
 void init().catch(() => { status.textContent = '无法读取识别结果，请回到播放页重试。'; });

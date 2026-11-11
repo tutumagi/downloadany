@@ -25,9 +25,14 @@ try {
   server = createServer(async (request, response) => {
     try {
       const path = new URL(request.url, 'http://127.0.0.1').pathname;
-      if (path === '/') {
+      if (path === '/' || path === '/hls-page' || path === '/dash-then-hls') {
         response.writeHead(200, { 'content-type': 'text/html', 'set-cookie': ['demo', '1'].join('=') + '; Path=/; SameSite=Lax' });
-        response.end('<iframe src="/frame"></iframe><script>fetch("/media.m3u8").then(() => document.title = "sources loaded")</script>');
+        if (path === '/dash-then-hls') {
+          response.end('<script>fetch("/video.mpd"); setTimeout(() => fetch("/media.m3u8"), 3500)</script>');
+          return;
+        }
+        response.end((path === '/' ? '<iframe src="/frame"></iframe>' : '')
+          + '<script>fetch("/media.m3u8").then(() => document.title = "sources loaded")</script>');
         return;
       }
       credentials.push(Boolean(request.headers.cookie || request.headers.authorization));
@@ -69,6 +74,12 @@ try {
   const scanStart = credentials.length;
   const harness = await context.newPage();
   await harness.goto('chrome-extension://' + extensionId + '/harness.html');
+  const wrongOrigin = await harness.evaluate(async (url) => {
+    const { readCandidates } = await import(chrome.runtime.getURL('background.js'));
+    const tab = (await chrome.tabs.query({})).find((candidate) => candidate.url === url);
+    return readCandidates(tab.id, 'https://unapproved.example');
+  }, fixture);
+  assert.deepEqual(wrongOrigin, [], 'permission for the tab host does not authorize a different expected origin');
   const expiredCleared = await harness.evaluate(async () => {
     const { expireTemporaryFiles } = await import(chrome.runtime.getURL('background.js'));
     const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('downloadany-temp', { create: true });
@@ -105,6 +116,68 @@ try {
   assert.ok(credentials.length > scanStart);
   assert.ok(credentials.slice(scanStart).every((value) => !value), 'extension fetches do not replay credentials');
   console.log('Chromium extension: active page detection, DASH fallback, HLS MP4 save and playable audio/video verified.');
+
+  // Serve the actual web build at its approved local origin without touching the user's running dev server.
+  const webOrigin = 'http://127.0.0.1:8787';
+  let inspectCount = 0;
+  await context.route(webOrigin + '/**', async (route) => {
+    const { pathname } = new URL(route.request().url());
+    if (pathname === '/api/v1/inspect') {
+      inspectCount++;
+      return route.fulfill({ status: 422, json: { error: 'no_video', retryable: false } });
+    }
+    if (pathname === '/api/v1/sources') return route.fulfill({ json: { hosts: [] } });
+    const name = pathname === '/' ? 'index.html' : pathname.slice(1);
+    const types = { html: 'text/html', js: 'text/javascript', css: 'text/css', svg: 'image/svg+xml' };
+    try {
+      await route.fulfill({ contentType: types[name.split('.').at(-1)], body: await readFile(resolve('dist', name)) });
+    } catch { await route.fulfill({ status: 404 }); }
+  });
+  const web = await context.newPage();
+  await web.goto(webOrigin);
+  await web.getByRole('textbox', { name: '视频网址' }).fill(fixture + 'hls-page');
+  await web.getByRole('button', { name: '解析视频' }).click();
+  const launch = web.getByRole('button', { name: '在播放页识别', exact: false });
+  await launch.waitFor();
+  const nextManager = () => context.waitForEvent('page', {
+    predicate: (page) => page.url().startsWith('chrome-extension://' + extensionId + '/manager.html'), timeout: 12000,
+  });
+  const next = nextManager();
+  const linkedDownload = next.then((page) => page.waitForEvent('download', { timeout: 25000 }));
+  await launch.click();
+  const linkedManager = await next;
+  await web.getByRole('status').filter({ hasText: '已打开下载面板' }).waitFor();
+  const linkedSave = linkedManager.getByRole('link', { name: '保存 MP4' });
+  await linkedSave.waitFor({ timeout: 25000 });
+  const linkedOutput = probe(await (await linkedDownload).path());
+  assert.deepEqual(linkedOutput.streams.map((stream) => stream.codec_type).sort(), ['audio', 'video']);
+  assert.ok(Number(linkedOutput.format.duration) > 4.9);
+  assert.equal(inspectCount, 1);
+  console.log('Website bridge: fallback click opened the player, detected HLS, generated and saved MP4 automatically.');
+
+  const localLaunch = nextManager();
+  await web.getByRole('textbox', { name: '视频网址' }).fill(fixture + 'media.m3u8');
+  await web.getByRole('button', { name: '解析视频' }).click();
+  await (await localLaunch).getByRole('link', { name: '保存 MP4' }).waitFor({ timeout: 25000 });
+  assert.equal(inspectCount, 1, 'direct HLS never goes through the web Worker');
+
+  const knownLaunch = nextManager();
+  await web.getByRole('textbox', { name: '视频网址' }).fill('http://xuexi861.com/a/local-fixture');
+  await web.getByRole('button', { name: '解析视频' }).click();
+  const replayManager = await knownLaunch;
+  await replayManager.getByRole('button', { name: '允许并打开播放页' }).waitFor();
+  assert.equal(inspectCount, 1, 'the known replay never goes through the web Worker');
+
+  await web.getByRole('textbox', { name: '视频网址' }).fill(fixture + 'dash-then-hls');
+  await web.getByRole('button', { name: '解析视频' }).click();
+  await launch.waitFor();
+  const delayed = nextManager();
+  await launch.click();
+  const delayedManager = await delayed;
+  await delayedManager.getByRole('status').filter({ hasText: '已发现 DASH，正在继续' }).waitFor();
+  await delayedManager.getByRole('status').filter({ hasText: '找到 2 个分片来源' }).waitFor();
+  await delayedManager.getByRole('button', { name: '生成 MP4' }).waitFor();
+  assert.equal(await delayedManager.getByRole('link', { name: '保存 MP4' }).count(), 0);
 } finally {
   await context?.close();
   if (server?.listening) await new Promise((resolve) => server.close(resolve));
