@@ -15,6 +15,16 @@ npm run dev
 
 默认只允许内置示例。需要测试自有或明确获准的公开站点时，在 `wrangler.jsonc` 的 `vars.ALLOWED_HOSTS` 配置精确的页面、跳转和媒体主机名，用英文逗号分隔；无需更改解析器。只加入你信任其 DNS 和内容的主机。每次请求及重定向均重新检查目的地。端口、IP 地址、私有站点和四个平台不开放。视频字节由浏览器从源站获取；跨域只可播放或超过浏览器保存上限时，显示「打开源视频」和「复制链接」。
 
+## 本地浏览器扩展：HLS 回放
+
+需要 Chrome 或 Edge 121 及以上。扩展独立于网页和 Cloudflare。
+
+1. 运行 `npm ci` 和 `npm run build:extension`。
+2. 在 Chrome 打开 `chrome://extensions`（Edge 为 `edge://extensions`），开启「开发者模式」，选择「加载已解压的扩展程序」，选择仓库里的 `dist-extension`。
+3. 在原网页开始播放，等画面出来后点击 DownloadAny 扩展图标。看到 HLS 来源后，点「生成 MP4」再点「保存 MP4」。如果浏览器拦截了跨域读取，可选择只授予当前媒体域名的读取权限。
+
+本版支持未加密、同源分片、音视频在同一流中的 HLS 回放，输出最多 2 GiB。扩展不会把媒体地址或登录信息传给 DownloadAny 服务。需要登录权限、加密、跨域分片、分离音轨或 DASH 的内容暂不能导出。识别依据是当前播放页和同源内嵌页的媒体信息及近期请求；有些播放器不会暴露足够信息。关闭浏览器或标签页前请等待保存完成。扩展会定期清理浏览器里用于生成文件的临时副本。
+
 ## 验证
 
 ```sh
@@ -26,6 +36,16 @@ npm run test:browser
 ```
 
 浏览器测试逐字节核对下载结果，并验证网页中多个视频的识别、跨域保存和 390px 布局。跨域样例由浏览器测试拦截并提供响应，无须访问外站。iOS Safari 和 Android Chrome 的真机验收留到预览阶段。
+
+扩展测试另需 FFmpeg/FFprobe 和 Playwright Chromium（`npx playwright install chromium`）：
+
+```sh
+npm run build:extension
+npm run test:hls-media
+npm run test:extension
+```
+
+测试使用本地生成的 HLS，核对合并后 MP4 的时长、视频和音频。Chrome 扩展测试另外检查播放标签页识别、DASH 提示、文件保存和无 Cookie 请求。
 
 ## Git Flow 与发布
 

@@ -11,12 +11,17 @@
     "dev": "npm run build && wrangler dev --ip 127.0.0.1 --port 8787",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser.mjs",
-    "typecheck": "tsc -p tsconfig.web.json && tsc -p tsconfig.worker.json",
+    "typecheck": "tsc -p tsconfig.web.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.extension.json",
     "deploy:check": "npm run build && wrangler deploy --dry-run",
-    "deploy:preview": "npm run build && wrangler deploy"
+    "deploy:preview": "npm run build && wrangler deploy",
+    "build:extension": "vite build --config extension/vite.config.ts",
+    "test:hls-media": "node tests/hls-media.mjs",
+    "test:extension": "node tests/extension-browser.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261110.1",
+    "@types/chrome": "0.3.7",
+    "mux.js": "7.1.1",
     "playwright": "1.60.0",
     "typescript": "5.9.3",
     "vite": "7.3.6",
