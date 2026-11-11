@@ -19,6 +19,7 @@ const list = byId<HTMLUListElement>('video-list');
 const sourceLink = byId<HTMLAnchorElement>('source-link');
 const retry = byId<HTMLButtonElement>('retry');
 const playback = byId<HTMLButtonElement>('playback');
+const installHelp = byId<HTMLAnchorElement>('install-help');
 let busy = false;
 
 const messages: Record<ErrorCode, string> = {
@@ -178,6 +179,7 @@ function originalLink(text: string) {
 async function openStream(url: string) {
   playback.disabled = true;
   playback.hidden = true;
+  installHelp.hidden = true;
   setStatus('正在打开流媒体下载面板…', 'loading');
   try {
     const result = await launchPlayback(url);
@@ -185,8 +187,9 @@ async function openStream(url: string) {
       setStatus('已打开下载面板。需要时先授权播放站点，视频载入后会自动识别。', 'notice');
     } else {
       setStatus(result === 'missing'
-        ? '请在 Chrome 或 Edge 安装或重新加载 DownloadAny 扩展，刷新本页后重试。'
-        : '无法打开下载面板。请刷新本页，再点击「在播放页识别」。', 'error');
+        ? '还没连接到 DownloadAny 扩展。安装或重新加载后，请刷新本页重试。'
+        : '无法打开下载面板。请检查扩展是否已启用，刷新后重试。', 'error');
+      installHelp.hidden = false;
       playback.hidden = false;
     }
   } finally {
@@ -210,6 +213,7 @@ async function submitInput() {
   list.replaceChildren();
   retry.hidden = true;
   playback.hidden = true;
+  installHelp.hidden = true;
   sourceLink.hidden = true;
   sourceLink.removeAttribute('href');
   try {

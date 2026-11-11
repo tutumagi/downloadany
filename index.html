@@ -14,7 +14,10 @@
         <img src="/mark.svg" width="32" height="32" alt="">
         <span>DownloadAny</span>
       </a>
-      <a class="nav" href="#coverage">支持范围 <span aria-hidden="true">↘</span></a>
+      <nav class="nav-links" aria-label="主导航">
+        <a class="nav" href="#coverage">支持范围 <span aria-hidden="true">↘</span></a>
+        <a class="nav install-nav" href="/install">安装扩展</a>
+      </nav>
     </header>
 
     <main>
@@ -55,6 +58,7 @@
         </div>
         <p id="status" class="status" role="status" aria-live="polite" data-kind="idle"></p>
         <a id="source-link" class="text-link" hidden target="_blank" rel="noopener noreferrer">打开原站 ↗</a>
+        <a id="install-help" class="text-link" href="/install" hidden>查看扩展安装步骤</a>
         <button id="retry" class="text-link" type="button" hidden>重新解析 ↻</button>
         <button id="playback" class="text-link" type="button" hidden>在播放页识别 ↗</button>
       </section>
@@ -69,12 +73,12 @@
         <div>
           <h2 id="coverage-title">当前支持范围</h2>
           <p id="allowed">内置示例覆盖 MP4 直链和含多个 MP4 的网页。</p>
-          <p>播放后才加载的 HLS 视频可通过 DownloadAny 本地扩展识别和保存。</p>
+          <p>播放后才加载的 MP4 和受支持的 HLS，可通过 <a href="/install">DownloadAny 浏览器扩展</a>识别和保存。</p>
           <p>B 站、抖音、小红书和 YouTube 暂未开放。请只保存你有权下载的视频。</p>
         </div>
       </section>
     </main>
-    <footer><span>DownloadAny</span><a href="/privacy.html">隐私政策</a><span>网页工具 · v0.1</span></footer>
+    <footer><span>DownloadAny · Beta</span><a href="/install">扩展安装指南</a><a href="/privacy.html">隐私政策</a></footer>
   </div>
   <script type="module" src="/src/web/main.ts"></script>
 </body>

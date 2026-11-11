@@ -1,6 +1,6 @@
 {
   "name": "downloadany",
-  "version": "0.1.0",
+  "version": "0.3.2-beta.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,11 +11,13 @@
     "dev": "npm run build && wrangler dev --ip 127.0.0.1 --port 8787",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser.mjs",
+    "test:install": "node tests/install-browser.mjs",
     "typecheck": "tsc -p tsconfig.web.json && tsc -p tsconfig.worker.json && tsc -p tsconfig.extension.json",
     "deploy:check": "npm run build && wrangler deploy --dry-run",
     "deploy:preview": "npm run build && wrangler deploy",
     "build:extension": "vite build --config extension/vite.config.ts",
     "package:stores": "npm run build:extension && python3 scripts/package-store.py",
+    "package:beta": "npm run build:extension && python3 scripts/package-store.py --beta",
     "test:hls-media": "node tests/hls-media.mjs",
     "test:extension": "node tests/extension-browser.mjs"
   },

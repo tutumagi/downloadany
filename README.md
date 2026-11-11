@@ -1,5 +1,9 @@
 # DownloadAny
 
+[在线试用](https://downloadany.tufei-fly.workers.dev/) · [扩展安装指南](https://downloadany.tufei-fly.workers.dev/install) · [GitHub Beta Releases](https://github.com/tutumagi/downloadany/releases)
+
+浏览器试用请下载 Release 里单独附带的 DownloadAny 扩展 ZIP，解压后加载包含 `manifest.json` 的目录。GitHub 自动生成的源码包不能直接用来安装扩展。
+
 在浏览器里粘贴一个网址，找出其中的 MP4，再选择保存。v0.1 支持直链和静态 HTML 中的 MP4；B 站、抖音、小红书和 YouTube 暂未开放。
 
 ## 本地试用
@@ -60,3 +64,10 @@ npm run test:extension
 需求和限制见[设计稿](docs/superpowers/specs/2026-11-11-downloadany-web-design.md)。
 
 Edge Add-ons 和 Chrome Web Store 共用同一个提交包。运行 `npm run package:stores` 构建 ZIP；商店包省略本机开发地址，侧载测试包保持原样。商店字段、权限用途和自有媒体审核样例见[提交材料](docs/releases/extension-stores-0.3.2.md)。
+
+
+## GitHub Beta
+
+`npm run package:beta` 根据 `public/install-config.json` 生成 Beta ZIP。Release 使用对应的 Git tag 并标记为 prerelease；确认附件可公开下载后再发布网站的安装入口。商店实际可安装时，在同一配置中填入对应商店的正式链接；保持 GitHub Beta 下载。
+
+`npm run test:install` 用 Microsoft Edge 验证安装页和扩展缺失的引导。对线上试用站，设置 `APP_URL` 和 `VERIFY_BETA_DOWNLOAD=1` 可额外验证匿名下载。
