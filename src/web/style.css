@@ -28,9 +28,11 @@ a:focus-visible, button:focus-visible, input:focus-visible {
   min-height: 79px; border-bottom: 1px solid var(--line);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 700 21px/1 "Avenir Next", sans-serif; letter-spacing: -.055em; }
+.nav-links { display: flex; align-items: center; gap: clamp(7px, 2vw, 17px); }
 .nav { text-decoration: none; font-size: .82rem; }
 .nav span { margin-left: 5px; }
 .nav:hover, .text-link:hover { text-decoration: underline; }
+.install-nav { background: #e7f6cc; border: 1px solid #a9b991; padding: 3px 8px; border-radius: 5px; white-space: nowrap; font-weight: 650; }
 .hero {
   min-height: 351px; display: grid; grid-template-columns: 1fr 36%;
   align-items: center; gap: 7%; padding: 46px 0 39px;

@@ -27,7 +27,15 @@ manifest["optional_host_permissions"] = [
 ]
 for script in manifest["content_scripts"]:
     script["matches"] = [entry for entry in script["matches"] if entry.startswith("https://")]
-output = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else source / f"DownloadAny-{manifest['version']}-stores.zip"
+if sys.argv[1:] == ["--beta"]:
+    beta = json.loads((root / "public" / "install-config.json").read_text(encoding="utf-8"))["beta"]
+    tag = beta["tag"]
+    expected_prefix = f"v{manifest['version']}-beta."
+    assert tag.startswith(expected_prefix) and tag[len(expected_prefix):].isdigit(), "beta tag and extension version differ"
+    assert beta["asset"] == f"DownloadAny-{tag[1:]}.zip", "unexpected beta asset name"
+    output = source / beta["asset"]
+else:
+    output = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else source / f"DownloadAny-{manifest['version']}-stores.zip"
 output.parent.mkdir(parents=True, exist_ok=True)
 
 names = {

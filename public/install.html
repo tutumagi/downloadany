@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从 GitHub Beta 或浏览器商店安装 DownloadAny 扩展。">
+  <title>安装扩展 · DownloadAny</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/install.css">
+  <script src="/install.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="DownloadAny 首页"><img src="/mark.svg" width="32" height="32" alt="">DownloadAny</a>
+      <a class="back" href="/">回到视频解析 <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="install-title">
+        <p class="eyebrow">DOWNLOADANY / 桌面浏览器</p>
+        <h1 id="install-title">安装 DownloadAny 扩展</h1>
+        <p>视频在播放后才加载时，扩展会识别当前播放页，并在你的设备上保存视频。桌面 Microsoft Edge 和 Google Chrome 均可安装。</p>
+      </section>
+
+      <div class="channels">
+        <section class="channel beta" aria-labelledby="beta-title">
+          <div class="channel-top"><span class="channel-index">01 / GITHUB</span><span id="beta-version" class="badge">Beta</span></div>
+          <h2 id="beta-title">开发者模式安装</h2>
+          <p>从 GitHub Release 获取扩展 ZIP，无需克隆代码或安装开发工具。</p>
+          <div class="channel-actions">
+            <a id="zip-download" class="action primary" hidden>下载扩展 ZIP <span aria-hidden="true">↓</span></a>
+            <a id="release-link" class="quiet-link" href="https://github.com/tutumagi/downloadany/releases">查看发布记录</a>
+          </div>
+          <p id="release-status" class="small" role="status">正在加载发布信息…</p>
+          <noscript><p>请从 GitHub 的 Releases 页面下载 Beta 扩展 ZIP。</p></noscript>
+        </section>
+
+        <section class="channel stores" aria-labelledby="stores-title">
+          <div class="channel-top"><span class="channel-index">02 / STORE</span></div>
+          <h2 id="stores-title">浏览器商店安装</h2>
+          <p>商店版通过对应的安装页添加，之后可自动更新。GitHub Beta 下载仍会保留。</p>
+          <ul class="store-list">
+            <li><span>Microsoft Edge</span><span id="edge-status" class="state">待上架</span><a id="edge-store" class="quiet-link" hidden>从 Edge Add-ons 安装</a></li>
+            <li><span>Google Chrome</span><span id="chrome-status" class="state">待上架</span><a id="chrome-store" class="quiet-link" hidden>从 Chrome Web Store 安装</a></li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="guide" aria-labelledby="guide-title">
+        <div class="guide-head"><p class="eyebrow">MANUAL SETUP</p><h2 id="guide-title">四步安装 Beta</h2></div>
+        <ol class="steps">
+          <li><h3>解压下载的 ZIP</h3><p>保留解压后的文件夹，确认里面可以直接看到 <code>manifest.json</code>。</p></li>
+          <li>
+            <h3>打开浏览器的扩展管理页</h3>
+            <p>复制对应地址，粘贴到浏览器地址栏打开。</p>
+            <div class="addresses">
+              <div><span>Edge</span><code>edge://extensions</code><button type="button" data-copy="edge://extensions" aria-label="复制 Edge 扩展管理地址">复制</button></div>
+              <div><span>Chrome</span><code>chrome://extensions</code><button type="button" data-copy="chrome://extensions" aria-label="复制 Chrome 扩展管理地址">复制</button></div>
+            </div>
+            <p id="copy-status" class="small" role="status"></p>
+          </li>
+          <li><h3>开启开发者模式并加载扩展</h3><p>点击「加载解压缩的扩展」或「加载已解压的扩展程序」，选择包含 <code>manifest.json</code> 的文件夹。安装后不要删除该文件夹。</p></li>
+          <li><h3>回到 DownloadAny，刷新再试</h3><p>粘贴视频网址，按页面提示操作。以后改用商店版时，先停用开发者模式安装的副本，避免两个版本同时处理。</p><a class="quiet-link" href="/">回到视频解析 ↗</a></li>
+        </ol>
+      </section>
+    </main>
+
+    <footer><span>DownloadAny</span><a href="/privacy.html">隐私政策</a><span>扩展安装指南</span></footer>
+  </div>
+</body>
+</html>
