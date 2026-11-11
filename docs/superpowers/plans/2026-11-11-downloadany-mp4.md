@@ -16,13 +16,18 @@ No remote deployment in the local-first handoff, no third-party platform adapter
 
 ## Task 1: Build and inspect
 
-- [ ] Add project tooling and Node tests for the URL policy and GET-based MP4 delivery classification. Run tests with the features still absent.
-- [ ] Implement the contract in `src/shared.ts`, URL policy in `src/worker/policy.ts`, and MP4 header classification in `src/worker/media.ts`. Add bounded fetch and HTML scanning in `src/worker/inspect.ts`, with HTTP routing in `src/worker/index.ts`.
-- [ ] Add self-hosted demo assets and run integration cases for direct links, relative URLs, distinct videos, deduplication, timeout/limit handling, and source restrictions. Run type and build checks.
+- [x] Add project tooling and Node tests for the URL policy and GET-based MP4 delivery classification. Run tests with the features still absent.
+- [x] Implement the contract in `src/shared.ts`, URL policy in `src/worker/policy.ts`, and MP4 header classification in `src/worker/media.ts`. Add bounded fetch and HTML scanning in `src/worker/inspect.ts`, with HTTP routing in `src/worker/index.ts`.
+- [x] Add self-hosted demo assets and verify direct links, relative URLs, distinct videos, deduplication, request body limits and cancellation, and source restrictions. Run type and build checks.
 
 ## Task 2: Browser workflow and handoff
 
-- [ ] Add a browser test for filling the sample link, inspecting a page, downloading MP4 bytes, and surfacing closed-platform errors. Run it against the local server before the UI exists.
-- [ ] Build a responsive, keyboard-accessible form and result list in `index.html` and `src/web/`. Distinguish downloading from opening the source and show a retry action for transient errors.
-- [ ] Verify both attachment and CORS delivery, the actual saved media files, small-screen layout, and Wrangler's build configuration. Document run commands, supported hosts, Git Flow and the later workers.dev rollout.
-- [ ] Review the implementation, commit on the feature branch, and integrate the verified feature into `develop` locally.
+- [x] Add a browser test for filling the sample link, inspecting a page, downloading MP4 bytes, and surfacing closed-platform errors. Run it against the local server before the UI exists.
+- [x] Build a responsive, keyboard-accessible form and result list in `index.html` and `src/web/`. Distinguish downloading from opening the source and show a retry action for transient errors.
+- [x] Verify both attachment and CORS delivery, the actual saved media files, small-screen layout, and Wrangler's build configuration. Document run commands, supported hosts, Git Flow and the later workers.dev rollout.
+- [x] Review the implementation, commit on the feature branch, and integrate the verified feature into `develop` locally.
+
+## Implementation notes
+
+- GET probes classify attachment and CORS separately and stop reading after the headers. Workers Static Assets canonicalizes the demo HTML URL; the demo permits both the original path and the canonical path.
+- Browser checks saved fixture bytes through the attachment and Blob paths and verified a cross-origin fixture, platform closed state, and mobile viewport. No Cloudflare account or DNS was changed.
