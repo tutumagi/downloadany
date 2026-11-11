@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从支持的网页和 MP4 直链找到视频，并保存到你的设备。">
+  <title>DownloadAny · 网页视频下载</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="DownloadAny 首页">
+        <img src="/mark.svg" width="32" height="32" alt="">
+        <span>DownloadAny</span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a class="nav" href="#coverage">支持范围 <span aria-hidden="true">↘</span></a>
+        <a class="nav install-nav" href="/install">安装扩展</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="kicker"><span aria-hidden="true"></span> 网页视频下载工具</p>
+          <h1 id="hero-title">从网页，<br>保存你要的<span>视频。</span></h1>
+          <p class="intro">粘贴一个网页地址或 MP4 直链，<br class="wide">找到其中的视频，再选一个保存。</p>
+        </div>
+        <div class="film" aria-hidden="true">
+          <div class="film-edge"></div>
+          <div class="film-screen">
+            <div class="screen-info"><span>FRAME 01</span><span>VIDEO / MP4</span></div>
+            <svg viewBox="0 0 300 142" fill="none">
+              <path d="M0 122h300M0 100h300M0 78h300M0 56h300M0 34h300M0 12h300M25 0v142M50 0v142M75 0v142M100 0v142M125 0v142M150 0v142M175 0v142M200 0v142M225 0v142M250 0v142M275 0v142" stroke="currentColor" opacity=".22"/>
+              <path d="M0 88h40l14-24 16 45 22-74 18 53h22l12-15 17 15h33l21-50 17 76 14-26h54" stroke="currentColor" stroke-width="1.5"/>
+              <rect x="123" y="44" width="54" height="54" rx="27" fill="#c9ff49"/>
+              <path d="M146 60l16 11-16 11V60z" fill="#151e15"/>
+            </svg>
+            <div class="screen-info"><span>00:00:01</span><span>●</span></div>
+          </div>
+          <div class="film-edge"></div>
+        </div>
+      </section>
+
+      <section class="workbench" aria-label="解析视频网址">
+        <form id="inspect-form">
+          <label for="video-url">视频网址</label>
+          <div class="input-row">
+            <input id="video-url" name="url" type="text" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://…" maxlength="8192" required>
+            <button id="submit" class="primary" type="submit"><span>解析视频</span><span aria-hidden="true">↗</span></button>
+          </div>
+        </form>
+        <div class="examples">
+          <span>手边没有链接？</span>
+          <button type="button" id="example-direct">试试 MP4 直链</button>
+          <button type="button" id="example-page">试试视频网页</button>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite" data-kind="idle"></p>
+        <a id="source-link" class="text-link" hidden target="_blank" rel="noopener noreferrer">打开原站 ↗</a>
+        <a id="install-help" class="text-link" href="/install" hidden>查看扩展安装步骤</a>
+        <button id="retry" class="text-link" type="button" hidden>重新解析 ↻</button>
+        <button id="playback" class="text-link" type="button" hidden>在播放页识别 ↗</button>
+      </section>
+
+      <section id="results" class="results" aria-labelledby="result-title" hidden>
+        <div class="result-head"><h2 id="result-title"></h2><span id="result-host"></span></div>
+        <ul id="video-list"></ul>
+      </section>
+
+      <section class="coverage" id="coverage" aria-labelledby="coverage-title">
+        <p class="section-label">使用前了解</p>
+        <div>
+          <h2 id="coverage-title">当前支持范围</h2>
+          <p id="allowed">内置示例覆盖 MP4 直链和含多个 MP4 的网页。</p>
+          <p>播放后才加载的 MP4 和受支持的 HLS，可通过 <a href="/install">DownloadAny 浏览器扩展</a>识别和保存。</p>
+          <p>B 站、抖音、小红书和 YouTube 暂未开放。请只保存你有权下载的视频。</p>
+        </div>
+      </section>
+    </main>
+    <footer><span>DownloadAny · Beta</span><a href="/install">扩展安装指南</a><a href="/privacy.html">隐私政策</a></footer>
+  </div>
+  <script type="module" src="/src/web/main.ts"></script>
+</body>
+</html>

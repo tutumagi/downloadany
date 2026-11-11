@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DownloadAny 隐私政策 · Privacy Policy</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/privacy.css">
+</head>
+<body>
+  <main>
+    <nav><a href="/">DownloadAny</a><a href="#english" lang="en">English</a></nav>
+    <article>
+      <h1>DownloadAny 隐私政策</h1>
+      <p class="date">更新日期：2026 年 11 月 11 日</p>
+      <p>本政策说明 DownloadAny 网页及其浏览器扩展如何处理信息。DownloadAny 帮助你识别和保存自己有权下载的 MP4 或 HLS 视频。</p>
+      <h2>网页</h2>
+      <p>使用网页解析普通 MP4 时，浏览器会把你输入的网址发送给 DownloadAny 的 Cloudflare Worker。服务会验证网址，并在允许范围内检查网页或文件响应。已知需要扩展处理的链接由浏览器交给本地扩展。应用没有下载历史数据库，也不在应用日志中记录完整输入网址、签名参数或请求正文。</p>
+      <p>Cloudflare 托管网页和解析接口。解析接口使用 Cloudflare 提供的 IP 地址做请求限流。Cloudflare 处理网络请求所需的信息，详见 <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare 隐私政策</a>。</p>
+      <h2>浏览器扩展</h2>
+      <p>你从 DownloadAny 发起播放页检测或点击扩展图标时，扩展读取目标标签页及同源内嵌页的媒体元素和近期媒体请求，以识别候选网址。扩展可能把候选网址短暂保存在扩展的会话存储中；打开下载面板时读取并清除该记录，过期记录会在后续操作中清理。扩展不读取或复制登录 Cookie、密码，也不把候选媒体网址或文件上传给 DownloadAny。</p>
+      <p>文件由浏览器直接向媒体源站请求。若浏览器要求，扩展只为所选播放站点或媒体来源请求读取权限。生成文件使用浏览器私有的临时存储，处理失败会清理临时文件；成功生成的临时文件在三小时后可清理，并由浏览器运行期间的定时任务或下次启动清理。保存到下载目录的文件由你管理。</p>
+      <h2>使用和控制</h2>
+      <p>DownloadAny 不出售用户数据，不投放广告，也不将播放页信息用于广告画像。你可以在浏览器的扩展设置中撤销站点权限或卸载扩展。如有隐私问题或需要支持，请联系 <a href="mailto:brucepower33@gmail.com">brucepower33@gmail.com</a>。</p>
+      <p>DownloadAny 对用户数据的处理遵守 Chrome Web Store User Data Policy，包括 Limited Use 要求。</p>
+    </article>
+    <article id="english" lang="en">
+      <h2>DownloadAny Privacy Policy</h2>
+      <p class="date">Updated November 11, 2026</p>
+      <p>This policy covers the DownloadAny website and browser extension. DownloadAny helps you identify and save MP4 or HLS videos you are authorized to download.</p>
+      <h3>Website</h3>
+      <p>When you use the website's ordinary MP4 inspection, your browser sends the URL you enter to the DownloadAny Cloudflare Worker. It validates the URL and checks the page or file response for permitted sources. Recognized links that require the extension are passed to the local extension instead. The app does not maintain a download history database or log full input URLs, signatures, or request bodies in application logs.</p>
+      <p>Cloudflare hosts the website and inspection API. The API uses the IP address provided by Cloudflare for rate limiting. See the <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare Privacy Policy</a> for its handling of network information.</p>
+      <h3>Browser extension</h3>
+      <p>When you start playback detection from DownloadAny or invoke the extension, it checks media elements and recent media requests in the selected tab and its same-origin frames to identify media URLs. Candidates may be kept briefly in extension session storage and are removed when the download panel reads them or when expired entries are next cleaned up. The extension does not read or copy login cookies or passwords, or upload candidate media URLs or files to DownloadAny.</p>
+      <p>Your browser requests media directly from its source. Where required, the extension requests read access to the selected playback site or media origin. Processing uses temporary private browser storage. Failed jobs clean up temporary files; successful temporary files become eligible for periodic or next-start cleanup after three hours. Files saved to your Downloads folder remain under your control.</p>
+      <h3>Use and controls</h3>
+      <p>DownloadAny does not sell user data, serve advertising, or use playback information for ad profiling. You can revoke site access or uninstall the extension in your browser. For privacy questions or support, contact <a href="mailto:brucepower33@gmail.com">brucepower33@gmail.com</a>.</p>
+      <p>DownloadAny's handling of user data adheres to the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
+    </article>
+  </main>
+</body>
+</html>

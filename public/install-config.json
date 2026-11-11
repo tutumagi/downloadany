@@ -1,0 +1,12 @@
+{
+  "beta": {
+    "owner": "tutumagi",
+    "repository": "downloadany",
+    "tag": "v0.3.2-beta.1",
+    "asset": "DownloadAny-0.3.2-beta.1.zip"
+  },
+  "stores": {
+    "edge": null,
+    "chrome": null
+  }
+}

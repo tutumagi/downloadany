@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.wrangler/
+.superpowers/
+.dev.vars*
+.env*
+.DS_Store
+dist-extension/

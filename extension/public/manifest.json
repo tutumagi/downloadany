@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "DownloadAny · 分片视频",
+  "description": "识别当前标签页里的 MP4 和 HLS 视频，并在本机保存。",
+  "version": "0.3.2",
+  "minimum_chrome_version": "121",
+  "permissions": ["activeTab", "scripting", "storage", "alarms"],
+  "optional_host_permissions": ["https://*/*", "http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://127.0.0.1/*",
+        "http://localhost/*",
+        "https://download.tutudev.com/*",
+        "https://downloadany.tufei-fly.workers.dev/*"
+      ],
+      "js": ["web-bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": { "default_title": "DownloadAny · 识别当前标签页的视频" },
+  "icons": { "32": "icon-32.png", "128": "icon-128.png" }
+}

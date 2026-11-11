@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "module": "ESNext", "moduleResolution": "Bundler", "allowImportingTsExtensions": true,
+    "noEmit": true, "strict": true, "types": ["chrome", "vite/client"]
+  },
+  "include": ["extension/*.ts"],
+  "exclude": ["extension/vite.config.ts"]
+}
