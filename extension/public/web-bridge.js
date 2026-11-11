@@ -1,5 +1,10 @@
 (() => {
-  const trusted = new Set(['http://127.0.0.1:8787', 'http://localhost:8787', 'https://download.tutudev.com']);
+  const trusted = new Set([
+    'http://127.0.0.1:8787',
+    'http://localhost:8787',
+    'https://download.tutudev.com',
+    'https://downloadany.tufei-fly.workers.dev',
+  ]);
   if (window.top !== window || !trusted.has(location.origin)) return;
   window.addEventListener('message', async (event) => {
     const data = event.data;

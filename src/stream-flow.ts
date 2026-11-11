@@ -2,9 +2,11 @@ import { platformFor } from './platform.ts';
 
 export type PlaybackTarget = { url: string; origin: string; direct?: 'hls' | 'dash' };
 
+export const WORKERS_PREVIEW_ORIGIN = 'https://downloadany.tufei-fly.workers.dev';
+
 export function trustedWebOrigin(origin: string) {
   return origin === 'http://127.0.0.1:8787' || origin === 'http://localhost:8787'
-    || origin === 'https://download.tutudev.com';
+    || origin === 'https://download.tutudev.com' || origin === WORKERS_PREVIEW_ORIGIN;
 }
 
 export function extractPlaybackUrl(input: string): string | undefined {
