@@ -1,0 +1,13 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https: http:; media-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'
+
+/demo/signal.mp4
+  Content-Type: video/mp4
+  Content-Disposition: attachment; filename="signal.mp4"
+
+/demo/orbit.mp4
+  Content-Type: video/mp4
