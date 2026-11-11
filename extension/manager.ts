@@ -4,6 +4,7 @@ import type { PlaybackJob, Scan } from './background.ts';
 import { readCandidates } from './observe.ts';
 import { HlsError, prepareHls, type HlsCode } from './hls.ts';
 import { writeHlsMp4 } from './remux.ts';
+import { writeProgressiveMp4 } from './progressive.ts';
 import { expireTemporaryFiles, LINK_TTL_MS, openTempDirectory } from './temp.ts';
 import { playbackTarget } from '../src/stream-flow.ts';
 
@@ -20,7 +21,7 @@ const messages: Record<HlsCode, string> = {
   unsupported: '这条 HLS 使用分离音轨、范围分片或其他暂不支持的格式。',
   cross_origin: '清单引用了其他域名的资源，当前版本暂不支持这种结构。',
   size: '超过本地处理上限，未生成文件。',
-  media: '分片或音轨格式无法合并成带声音的 MP4。',
+  media: '源站没有返回完整可保存的 MP4，或分片及音轨格式不兼容。',
 };
 
 function permissionFor(url: URL) {
@@ -38,7 +39,7 @@ function renderSource(candidate: Candidate, index: number, auto = false) {
   const item = document.createElement('li');
   const url = new URL(candidate.url);
   const heading = document.createElement('strong');
-  heading.textContent = (candidate.kind === 'hls' ? 'HLS' : 'DASH') + ' · ' + url.host;
+  heading.textContent = candidate.kind.toUpperCase() + ' · ' + url.host;
   const note = document.createElement('p');
   note.setAttribute('aria-live', 'polite');
   item.append(heading, note);
@@ -64,22 +65,36 @@ function renderSource(candidate: Candidate, index: number, auto = false) {
     prepare.disabled = true;
     grant.hidden = true;
     cancel.hidden = false;
-    note.textContent = '正在读取 HLS 播放清单…';
+    note.textContent = candidate.kind === 'mp4' ? '正在连接 MP4 来源…' : '正在读取 HLS 播放清单…';
     let dir: FileSystemDirectoryHandle | undefined;
     let temp: string | undefined;
     let writer: FileSystemWritableFileStream | undefined;
     try {
-      const media = await prepareHls(candidate.url, { signal });
+      const media = candidate.kind === 'hls' ? await prepareHls(candidate.url, { signal }) : undefined;
       await expireTemporaryFiles();
       dir = await openTempDirectory(true);
       temp = Date.now() + '-' + crypto.randomUUID() + '.mp4';
       const file = await dir.getFileHandle(temp, { create: true });
       writer = await file.createWritable();
       const output = writer;
-      await writeHlsMp4(media, async (bytes) => output.write(new Uint8Array(bytes)), {
-        signal,
-        progress: (done, total) => { note.textContent = '正在生成 MP4：' + done + ' / ' + total + ' 段'; },
-      });
+      const write = async (bytes: Uint8Array) => output.write(new Uint8Array(bytes));
+      if (media) {
+        await writeHlsMp4(media, write, {
+          signal,
+          progress: (done, total) => { note.textContent = '正在生成 MP4：' + done + ' / ' + total + ' 段'; },
+        });
+      } else {
+        let lastUpdate = 0;
+        await writeProgressiveMp4(candidate.url, write, {
+          signal,
+          progress: (bytes, total) => {
+            if (Date.now() - lastUpdate < 500 && bytes !== total) return;
+            lastUpdate = Date.now();
+            note.textContent = '正在保存 MP4：' + (total ? Math.floor(100 * bytes / total) + '%'
+              : (bytes / (1024 * 1024)).toFixed(1) + ' MB');
+          },
+        });
+      }
       signal.throwIfAborted();
       await writer.close();
       writer = undefined;
@@ -145,10 +160,13 @@ function renderSource(candidate: Candidate, index: number, auto = false) {
 }
 
 function showSources(candidates: Candidate[], auto: boolean) {
-  status.textContent = '找到 ' + candidates.length + ' 个分片来源。';
-  const singleHls = candidates.length === 1 && candidates[0].kind === 'hls';
+  status.textContent = '找到 ' + candidates.length + (candidates.some((candidate) => candidate.kind === 'mp4')
+    ? ' 个视频来源。' : ' 个分片来源。');
+  const playingFiles = candidates.filter((candidate) => candidate.kind === 'mp4' && candidate.current);
+  const selected = playingFiles.length === 1 ? playingFiles[0]
+    : candidates.length === 1 && candidates[0].kind !== 'dash' ? candidates[0] : undefined;
   list.replaceChildren(...candidates.map((candidate, index) =>
-    renderSource(candidate, index, auto && singleHls && candidate.kind === 'hls')));
+    renderSource(candidate, index, auto && candidate === selected)));
 }
 
 async function openPlayback({ target }: PlaybackJob) {
@@ -198,8 +216,8 @@ async function openPlayback({ target }: PlaybackJob) {
             changedAt = Date.now();
           }
         }
-        const hasHls = [...found.values()].some((candidate) => candidate.kind === 'hls');
-        if (hasHls && Date.now() - changedAt >= 2500) {
+        const downloadable = [...found.values()].some((candidate) => candidate.kind !== 'dash');
+        if (downloadable && Date.now() - changedAt >= 2500) {
           controls.remove();
           showSources([...found.values()], true);
           if (manager?.id !== undefined && tab.active) {
@@ -207,7 +225,7 @@ async function openPlayback({ target }: PlaybackJob) {
           }
           return;
         }
-        if (found.size && !hasHls) status.textContent = '已发现 DASH，正在继续检查是否还有 HLS 来源。';
+        if (found.size && !downloadable) status.textContent = '已发现 DASH，正在继续检查是否还有 HLS 或 MP4 来源。';
         await new Promise((resolve) => window.setTimeout(resolve, 1500));
       }
       if (found.size) {
@@ -262,7 +280,7 @@ async function init() {
   } else if (session.inaccessible) {
     status.textContent = '无法读取这个标签页。请在正常的网页播放页点击扩展图标。';
   } else if (!session.candidates.length) {
-    status.textContent = '没有找到 HLS 或 DASH。请回到原标签页开始播放，等视频载入后再点击扩展图标。';
+    status.textContent = '没有找到 MP4、HLS 或 DASH。请回到原标签页开始播放，等视频载入后再点击扩展图标。';
   } else {
     showSources(session.candidates, false);
   }

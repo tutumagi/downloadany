@@ -6,8 +6,11 @@ function observeTab(expectedOrigin?: string): Observation[] {
   const scopes = [{ page: document, timing: performance, depth: 0 }];
   for (const { page, timing, depth } of scopes) {
     for (const el of Array.from(page.querySelectorAll('video, video source')).slice(0, 40)) {
-      const url = (el.localName === 'video' ? (el as HTMLVideoElement).currentSrc : '') || (el as HTMLSourceElement).src;
-      if (url) observed.push({ url, type: el.getAttribute('type') || undefined });
+      const video = (el.localName === 'video' ? el : el.closest('video')) as HTMLVideoElement | null;
+      if (video?.mediaKeys) continue;
+      const current = el === video && video.readyState > 0 && Boolean(video.currentSrc);
+      const url = (el === video ? video.currentSrc : '') || (el as HTMLSourceElement).src;
+      if (url) observed.push({ url, type: el.getAttribute('type') || undefined, ...(current ? { current: true } : {}) });
     }
     for (const entry of timing.getEntriesByType('resource').slice(-600).reverse()) {
       const type = (entry as PerformanceResourceTiming & { contentType?: string }).contentType;

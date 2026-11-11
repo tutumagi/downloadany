@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
 const app = process.env.APP_URL ?? 'http://127.0.0.1:8787';
-const browser = await chromium.launch({ channel: 'chrome' });
+const browser = await chromium.launch({ channel: 'msedge' });
 try {
   const page = await browser.newPage({ acceptDownloads: true, viewport: { width: 1280, height: 900 } });
   const errors = [];
